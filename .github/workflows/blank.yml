@@ -1,0 +1,70 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull requests to main branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'  # Specify your Python version
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Run tests with coverage
+      - name: Run tests with coverage
+        run: |
+          python -m pytest -vvv --cov=hello --cov=greeting --cov=smath --cov=web tests
+
+      # Run notebook tests with nbval
+      - name: Run notebook tests
+        run: |
+          pip install nbval  # Ensure nbval is installed
+          python -m pytest --nbval notebook.ipynb
+
+      # Debug step (optional, for troubleshooting)
+      - name: Debug tests
+        if: failure()  # Run only if previous steps fail
+        run: |
+          python -m pytest -vv --pdb
+
+      # Run a specific test (optional)
+      - name: Run one specific test
+        run: |
+          python -m pytest -vv tests/test-greeting.py::test_my_name4
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test  # Only run this job if the 'test' job succeeds
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Only deploy on push to main, not PRs
+
+    steps:
+      # Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for proper Git operations
+
+      # Deploy to Hugging Face Space
+      - name: Deploy to Hugging Face Space
+        run: |
+          git remote add hf https://${{ secrets.HF_USERNAME }}:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/LostInHaze/demo
+          git push --force hf main
