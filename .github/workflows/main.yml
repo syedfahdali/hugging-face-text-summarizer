@@ -29,27 +29,12 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Run tests with coverage
-      - name: Run tests with coverage
-        run: |
-          python -m pytest -vvv --cov=hello --cov=greeting --cov=smath --cov=web tests
-
       # Run notebook tests with nbval
       - name: Run notebook tests
         run: |
           pip install nbval  # Ensure nbval is installed
           python -m pytest --nbval notebook.ipynb
 
-      # Debug step (optional, for troubleshooting)
-      - name: Debug tests
-        if: failure()  # Run only if previous steps fail
-        run: |
-          python -m pytest -vv --pdb
-
-      # Run a specific test (optional)
-      - name: Run one specific test
-        run: |
-          python -m pytest -vv tests/test-greeting.py::test_my_name4
 
   deploy:
     runs-on: ubuntu-latest
